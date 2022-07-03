@@ -7,7 +7,7 @@ NUMBER_OF_ENTRIES = 16 # serao sorteados numeros de 0 ate 15 gerando 4bits
 
 NUMBER_EXPECTED = 185
 #MAX_VALUE = -1  # maximun value
-MAX_RUNS = 30  # number maximun of executin
+MAX_RUNS = 100  # number maximun of executin
 CUT_NUMBER = 4  # numero de corte para gerar nova populacao
 
 
@@ -89,7 +89,7 @@ def __step_four(object_of_table):
 def sort_number_of_chromosomes():
     amount = 2#randint(1, 5)
     print('quantidade de cromossomos que seram utilizados para mutação: ', amount)
-    direction = 1#randint(0, 1)
+    direction = randint(0, 1)
     if direction == 1:
         print('começando a mutação de tras para a frente')
     else:
