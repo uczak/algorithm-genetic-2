@@ -1,158 +1,90 @@
-#import os
 from random import randint
-#from time import time
+
 import time
+from object_individual import Individual
 
-# print('foi')
+NUMBER_OF_ENTRIES = 16 # serao sorteados numeros de 0 ate 15 gerando 4bits
 
-NUMBER_OF_ENTRIES = 8
-NUMBER_EXPECTED = 2 
+NUMBER_EXPECTED = 185
 #MAX_VALUE = -1  # maximun value
-MAX_RUNS = 12  # number maximun of executin
+MAX_RUNS = 30  # number maximun of executin
 CUT_NUMBER = 4  # numero de corte para gerar nova populacao
-# class Rules:
-
-#     def __init__(self):
-#         pass
-
-
-class objects(object):
-    def __init__(self, point_x=0, point_y=0, chromosome=0, fun=0, weighting=0):
-        self.__point_x = point_x
-        self.__point_y = point_y
-        self.__chromosome = chromosome
-        self.__fun = fun
-        self.__weighting = weighting
-
-    def print_not_weighting(self):
-        return "%s %s %s %s" % (self.__point_x, self.__point_y, self.__chromosome, self.__fun)
-
-    def print_yes_weighting(self):
-        return "%s %s %s %s %s" % (self.__point_x, self.__point_y, self.__chromosome, self.__fun, self.__weighting)
-
-    def get_point_x(self):
-        return self.__point_x
-
-    def get_point_y(self):
-        return self.__point_y
-
-    def get_chromosome(self):
-        return self.__chromosome
-
-    def set_chromosome(self, chromosome):
-        self.__chromosome = chromosome
-
-    def get_fun(self):
-        return self.__fun
-
-    def set_fun(self, fun):
-        self.__fun = fun
-
-    def get_weighting(self):
-        return self.__weighting
-
-    def set_weighting(self, weighting):
-        self.__weighting = weighting
-    
-    def convert_chromosome(self):
-        point_x =  str(self.__chromosome[0:3])
-        point_y =  str(self.__chromosome[3:5])
-        self.__point_x = int(point_x, 2)
-        self.__point_y = int(point_y, 2)
 
 
 def convert_integer_to_binary(integer):
-    return bin(integer)[2:]
+    return bin(integer)[2:].rjust(4, '0')
 
 
-def function(point_x, point_y):
+def function(term_x, term_y, term_w, term_z):
+    result_term_x = 5 * int(term_x)
+    result_term_y = int(term_y) * int(term_y)
+    result_term_w = int(term_w)
+    result_term_z = int(term_z) * int(term_z) * int(term_z)
+    return result_term_x + result_term_y + result_term_w + result_term_z
 
-    return 2 - ((point_x-2)**2) - ((point_y-3)**2)
 
+#definie os individuos aleatoriamente gerando os seus respectivos cromossomos
+def __step_one():
+    print('\n passo 1')
+    step_one = []
+    for var in range(10):
+        term_x = randint(0, NUMBER_OF_ENTRIES - 1)
+        term_y = randint(0, NUMBER_OF_ENTRIES - 1)
+        term_w = randint(0, NUMBER_OF_ENTRIES - 1)
+        term_z = -1
+        #regra o z não pode ser maior que 5
+        while term_z < 0 or term_z > 5:
+            term_z = randint(0, NUMBER_OF_ENTRIES - 1)
+        chromosome = convert_integer_to_binary(term_x) + convert_integer_to_binary(term_y) + convert_integer_to_binary(term_w) + convert_integer_to_binary(term_z)
+        individual = Individual(term_x, term_y, term_w, term_z, chromosome)
+        step_one.append(individual)
 
-def __step_two():
-    print('\n passo 2')
-    step_two = []
-    for var in range(NUMBER_OF_ENTRIES):
-        obj = []
-        obj.append(str(var))
-        obj.append(convert_integer_to_binary(var).rjust(3, '0'))
-        step_two.append(obj)
     print('Decimal | Binario')
-    for obj in step_two:
-        print(obj)
+    for obj in step_one:
+        print(obj.print_not_weighting())
+    return step_one
 
 
-def __step_three():
-    points_history = ''
-    step_three = []
-    while len(step_three) < 10:
-        obj = []
-        point_x = randint(0, NUMBER_OF_ENTRIES - 1)
-        point_y = randint(0, NUMBER_OF_ENTRIES - 1)
+#aplica a fucao fitness
+def __step_two(object_of_table):
+    print('\n passo 2')
+    for obj_step_two in object_of_table:
+        obj_step_two.set_fun(function(obj_step_two.get_term_x(),obj_step_two.get_term_y(),obj_step_two.get_term_w(),obj_step_two.get_term_z()))
 
-        point = ' | ' + str(point_x) + ';' + str(point_y)
-        if point in points_history:
-            continue
+    for obj in object_of_table:
+        print(obj.print_yes_weighting())
 
-        points_history += point
-        obj.append(point_x)
-        obj.append(point_y)
-        obj.append(convert_integer_to_binary(point_x).rjust(
-            3, '0') + convert_integer_to_binary(point_y).rjust(3, '0'))
-        step_three.append(obj)
 
+#aplica a ponderação 
+def __step_three(object_of_table):
     print('\n passo 3')
-    print('X | Y | Cromossomo')
+    step_three = sorted(object_of_table, key=Individual.get_fun, reverse=True)
     for obj in step_three:
-        print(obj)
+        print(obj.print_yes_weighting())
     return step_three
 
 
+#estabelelce o corte dos individuos buscando pela proximidade com o valor esperado
 def __step_four(object_of_table):
+    i=0
     step_four = []
-    for obj_step_three in object_of_table:
-        obj_step_three.append(function(obj_step_three[0], obj_step_three[1]))
-        obj = objects(obj_step_three[0], obj_step_three[1],
-                      obj_step_three[2], obj_step_three[3])
-        step_four.append(obj)
+    while i < 6:
+        if object_of_table[i].get_fun() <= NUMBER_EXPECTED:
+            break
+        i = i + 1
+    j=4
+    while j > 0:
+        print('i',i)
+        print('j',j)
+        object_of_table[i].set_weighting(j)
+        step_four.append(object_of_table[i])
+        j = j -1
+        i = i +1
 
     print('\n passo 4')
-    print('X | Y | Cromossomo | f(x,y)')
     for obj in step_four:
-        print(obj.print_not_weighting())
-    return step_four
-
-
-def __step_five(step_four):
-    step_five = sorted(step_four, key=objects.get_fun, reverse=True)
-    print('\n passo 5')
-    for obj in step_five:
-        print(obj.print_not_weighting())
-    return step_five
-
-
-def __step_six(step_five):
-    step_six = step_five[0:int(CUT_NUMBER)]
-    print('\n passo 6')
-    for obj in step_six:
-        print(obj.print_not_weighting())
-    return step_six
-
-
-def __add_weighting(step_six):
-    number = 0
-    new_object_of_table = []
-    while number < CUT_NUMBER:
-        # set attribute set_weighting from object with number of weighting
-        step_six[number].set_weighting(int(CUT_NUMBER - number))
-        new_object_of_table.append(step_six[number])
-        number = number + 1
-    print('\n passo 7')
-    print('X | Y | Cromossomo | f(x,y) | Ponderação')
-    for obj in new_object_of_table:
         print(obj.print_yes_weighting())
-    return new_object_of_table
+    return step_four
 
 def sort_number_of_chromosomes():
     amount = 2#randint(1, 5)
@@ -163,6 +95,23 @@ def sort_number_of_chromosomes():
     else:
         print('começando a mutação da frente para tras')
     return amount, direction
+
+def chromosome_convert(chromosome):
+    returned = ''
+    for chr in chromosome:
+        #time.sleep(1.5)
+        # num = randint(0, 100)
+        # if num % 2 == 0:
+        #     returned = returned + '0'
+        # else:
+        #     returned = returned + '1'
+        returned = returned + str(randint(0, 1))
+        #print(chr)
+        # if chr =='0':
+        #     returned = returned + '1'
+        # else:
+        #     returned = returned + '0'
+    return returned
 
 
 def replicate_population(individual,  amount, direction):
@@ -184,7 +133,7 @@ def replicate_population(individual,  amount, direction):
     #print('chromosome_changed', chromosome_changed)
     #print('chromosome_unchanged', chromosome_unchanged)
     #print('new_chromosome', new_chromosome)
-    
+   
     iteration = 0
     while iteration < individual.get_weighting() - 1:
         if direction == 0:
@@ -192,28 +141,12 @@ def replicate_population(individual,  amount, direction):
         else:
             new_chromosome = chromosome_unchanged + chromosome_convert(chromosome_changed)
         #for pop in amount_individual:
-        replicate_population.append(objects(chromosome=new_chromosome))
+        replicate_population.append(Individual(chromosome=new_chromosome))
         iteration+=1
     ##print('test')
     #print(replicate_population.print_yes_weighting())
     return replicate_population
 
-def chromosome_convert(chromosome):
-    returned = ''
-    for chr in chromosome:
-        #time.sleep(1.5)
-        # num = randint(0, 100)
-        # if num % 2 == 0:
-        #     returned = returned + '0'
-        # else:
-        #     returned = returned + '1'
-        returned = returned + str(randint(0, 1))
-        #print(chr)
-        # if chr =='0':
-        #     returned = returned + '1'
-        # else:
-        #     returned = returned + '0'
-    return returned
 
 def create_new_population(object_with_weighting, amount, direction):
     children = []
@@ -221,23 +154,18 @@ def create_new_population(object_with_weighting, amount, direction):
         children = children + replicate_population(individual, amount, direction)
     return children
 
-def __step_seven(step_six):
-    object_with_weighting = __add_weighting(step_six)
+def __step_seven(step_four):
     amount, direction = sort_number_of_chromosomes()
-    new_population = create_new_population(object_with_weighting, amount, direction) 
-    
+    new_population = create_new_population(step_four, amount, direction) 
+   
     print('\n passo 7')
     print('X | Y | Cromossomo | f(x,y) | Ponderação')
     for ff in new_population:
         print(ff.print_yes_weighting())
+    
     return new_population
 
-
-
-def __step_nine(step_seven, account_runs):
-
-    #if not (account_runs - 1) % 5 == 0:
-    #    return
+def __step_nine(step_seven):
 
     individual_position = []
     while True:
@@ -265,14 +193,13 @@ def __step_nine(step_seven, account_runs):
         else:
             chromosome_unchanged = '1'
         #print('chromosome_changed_pre', chromosome_changed_pre , 'chromosome_unchanged',chromosome_unchanged, 'chromosome_changed_pos',chromosome_changed_pos)
-        
+       
         individual.set_chromosome(chromosome_changed_pre + chromosome_unchanged + chromosome_changed_pos)
 
     print('\n passo 9')
     print('X | Y | Cromossomo | f(x,y) | Ponderação')
     for ff in step_seven:
         print(ff.print_yes_weighting())
-
 
 def __step_ten(step_seven):
     for individual in step_seven:
@@ -285,9 +212,9 @@ def __step_ten(step_seven):
 
 def __step_eleven(step_seven):
     for individual in step_seven:
-        individual.set_fun(function(individual.get_point_x(), individual.get_point_y()))
+        individual.set_fun(function(individual.get_term_x(),individual.get_term_y(),individual.get_term_w(),individual.get_term_z()))
     
-    step_eleven = sorted(step_seven, key=objects.get_fun, reverse=True)
+    step_eleven = sorted(step_seven, key=Individual.get_fun, reverse=True)
     for ff in step_eleven:
         ff.set_weighting(0)
 
@@ -297,35 +224,165 @@ def __step_eleven(step_seven):
         print(ff.print_not_weighting())
     return step_eleven
 
-# stepTwo
-__step_two()
-# stepThree
-step_three = __step_three()
- # stepFour
-step_four = __step_four(step_three)
+
+population = __step_one()
+__step_two(population)
+step_three = __step_three(population)
 
 account_runs = 0
 function_value = 0
+step_eleven = step_three
 
 while account_runs < MAX_RUNS:
     account_runs = account_runs + 1
-   
-    # stepFive
-    step_five = __step_five(step_four)
-    # stepSix
-    step_six = __step_six(step_five)
-    # stepSeven
-    step_seven = __step_seven(step_six)
-    # step_nine
-    __step_nine(step_seven, account_runs)
-    # step_ten
-    step_ten = __step_ten(step_seven)
-    # step_eleven
-    step_eleven = __step_eleven(step_seven)
-
+    step_four = __step_four(step_eleven)
+    new_population = __step_seven(step_four)
+    __step_nine(new_population)
+    __step_ten(new_population)
+    step_eleven = __step_eleven(new_population)
+    
     function_value = step_eleven[0].get_fun()
     if function_value == NUMBER_EXPECTED:
         break
-
 print('finalizado com ', account_runs, ' épocas e valor da função encontrado ', function_value)
+
+
+# # stepTwo
+# __step_two()
+# # stepThree
+# step_three = __step_three()
+#  # stepFour
+# step_four = __step_four(step_three)
+
+# account_runs = 0
+# function_value = 0
+
+# while account_runs < MAX_RUNS:
+#     account_runs = account_runs + 1
+   
+#     # stepFive
+#     step_five = __step_five(step_four)
+#     # stepSix
+#     step_six = __step_six(step_five)
+#     # stepSeven
+#     step_seven = __step_seven(step_six)
+#     # step_nine
+#     __step_nine(step_seven, account_runs)
+#     # step_ten
+#     step_ten = __step_ten(step_seven)
+#     # step_eleven
+#     step_eleven = __step_eleven(step_seven)
+
+#     function_value = step_eleven[0].get_fun()
+#     if function_value == NUMBER_EXPECTED:
+#         break
+
+# print('finalizado com ', account_runs, ' épocas e valor da função encontrado ', function_value)
+
+
+
+
+# for obj in new_population:
+#     obj.set_fun(function(obj.get_term_x(),obj.get_term_y(),obj.get_term_w(),obj.get_term_z()))
+
+# print('-----------')
+# for obj in new_population:
+#     print(obj.print_yes_weighting())
+
+
+
+# def __step_nine(step_seven, account_runs):
+
+#     #if not (account_runs - 1) % 5 == 0:
+#     #    return
+
+#     individual_position = []
+#     while True:
+
+#         num = str(randint(0, 9))
+#         if num not in individual_position:
+#             individual_position.append(num)
+#             if len(individual_position) == 5:
+#                 break
+
+#     # for ff in individual_position:
+#     #     print(ff)
+
+#     for position in individual_position:
+#         individual = step_seven[int(position)]
+#         chromosome = individual.get_chromosome()
+#         num = randint(0, 5)
+#         #print('chromosome', int(position) + 1 , 'gene',num +1)
+#         #print('num',num)
+#         chromosome_changed_pre = chromosome[0:num]
+#         chromosome_changed_pos = chromosome[num + 1:len(chromosome)]
+#         chromosome_unchanged = chromosome[num]
+#         if chromosome_unchanged == '1':
+#             chromosome_unchanged = '0'
+#         else:
+#             chromosome_unchanged = '1'
+#         #print('chromosome_changed_pre', chromosome_changed_pre , 'chromosome_unchanged',chromosome_unchanged, 'chromosome_changed_pos',chromosome_changed_pos)
+        
+#         individual.set_chromosome(chromosome_changed_pre + chromosome_unchanged + chromosome_changed_pos)
+
+#     print('\n passo 9')
+#     print('X | Y | Cromossomo | f(x,y) | Ponderação')
+#     for ff in step_seven:
+#         print(ff.print_yes_weighting())
+
+
+# def __step_ten(step_seven):
+#     for individual in step_seven:
+#         individual.convert_chromosome()
+
+#     print('\n passo 10')
+#     print('X | Y | Cromossomo | f(x,y) | Ponderação')
+#     for ff in step_seven:
+#         print(ff.print_yes_weighting())
+
+# def __step_eleven(step_seven):
+#     for individual in step_seven:
+#         individual.set_fun(function(individual.get_point_x(), individual.get_point_y()))
+    
+#     step_eleven = sorted(step_seven, key=objects.get_fun, reverse=True)
+#     for ff in step_eleven:
+#         ff.set_weighting(0)
+
+#     print('\n passo 11')
+#     print('X | Y | Cromossomo | f(x,y)')
+#     for ff in step_eleven:
+#         print(ff.print_not_weighting())
+#     return step_eleven
+
+# # stepTwo
+# __step_two()
+# # stepThree
+# step_three = __step_three()
+#  # stepFour
+# step_four = __step_four(step_three)
+
+# account_runs = 0
+# function_value = 0
+
+# while account_runs < MAX_RUNS:
+#     account_runs = account_runs + 1
+   
+#     # stepFive
+#     step_five = __step_five(step_four)
+#     # stepSix
+#     step_six = __step_six(step_five)
+#     # stepSeven
+#     step_seven = __step_seven(step_six)
+#     # step_nine
+#     __step_nine(step_seven, account_runs)
+#     # step_ten
+#     step_ten = __step_ten(step_seven)
+#     # step_eleven
+#     step_eleven = __step_eleven(step_seven)
+
+#     function_value = step_eleven[0].get_fun()
+#     if function_value == NUMBER_EXPECTED:
+#         break
+
+# print('finalizado com ', account_runs, ' épocas e valor da função encontrado ', function_value)
 
